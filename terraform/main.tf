@@ -168,7 +168,17 @@ resource "aws_ecs_service" "app" {
   deployment_controller {
     type = "CODE_DEPLOY"
   }
+
+  lifecycle {
+    ignore_changes = [
+      task_definition,
+      desired_count,
+      load_balancer,
+      network_configuration,
+    ]
+  }
 }
+
 
 # ---- IAM Role for CodeDeploy ----
 resource "aws_iam_role" "codedeploy_role" {
