@@ -1,4 +1,4 @@
-name: ECS Blue/Green Deployment with ECR
+name: ECS Blue/Green Deployment with CodeDeploy
 
 on:
   push:
@@ -41,9 +41,29 @@ jobs:
         working-directory: terraform
         run: terraform init -upgrade
 
-      - name: Terraform Apply (deploy new image)
+      - name: Terraform Apply (register new task def)
         working-directory: terraform
         run: terraform apply -auto-approve -var "image_url=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+
+      - name: Trigger CodeDeploy Deployment
+        run: |
+          APP_NAME="ecs-bluegreen-app"
+          DEPLOYMENT_GROUP="ecs-bluegreen-dg"
+          TASK_DEF=$(terraform -chdir=terraform output -raw ecs_task_definition_arn)
+
+          echo "Using Task Definition: $TASK_DEF"
+
+          DEPLOYMENT_ID=$(aws deploy create-deployment \
+            --application-name $APP_NAME \
+            --deployment-group-name $DEPLOYMENT_GROUP \
+            --revision revisionType=AppSpecContent,appSpecContent="{\"version\":1,\"Resources\":[{\"TargetService\":{\"Type\":\"AWS::ECS::Service\",\"Properties\":{\"TaskDefinition\":\"$TASK_DEF\",\"LoadBalancerInfo\":{\"ContainerName\":\"app\",\"ContainerPort\":80}}}}]}" \
+            --region $AWS_REGION \
+            --query "deploymentId" \
+            --output text)
+
+          echo "Deployment started with ID: $DEPLOYMENT_ID"
+          aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID --region $AWS_REGION
+          echo "✅ Deployment $DEPLOYMENT_ID succeeded!"
 
       - name: Show ALB DNS
         working-directory: terraform
