@@ -1,7 +1,7 @@
 variable "image_url" {
   description = "ECR image URL"
   type        = string
-  default     = "nginx:latest"
+  default     = "nginx:alpine"
 }
 
 variable "aws_region" {
