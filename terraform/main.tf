@@ -195,6 +195,13 @@ resource "aws_ecs_service" "app" {
     type = "CODE_DEPLOY"
   }
 
+    load_balancer {
+    target_group_arn = aws_lb_target_group.blue.arn
+    container_name   = "app"
+    container_port   = 80
+  }
+    
+
   lifecycle {
     ignore_changes = [
       task_definition,
@@ -205,7 +212,7 @@ resource "aws_ecs_service" "app" {
 
 # ---------------- CodeDeploy Setup ----------------
 resource "aws_codedeploy_app" "ecs" {
-  name             = "ecs-bluegreen-app"
+  name             = "ecs-bluegreen-app-${random_string.suffix.result}"
   compute_platform = "ECS"
 }
 
@@ -228,7 +235,7 @@ resource "aws_iam_role_policy_attachment" "ecs_codedeploy_role_policy" {
 
 resource "aws_codedeploy_deployment_group" "ecs" {
   app_name              = aws_codedeploy_app.ecs.name
-  deployment_group_name = "ecs-bluegreen-dg"
+  deployment_group_name = "ecs-bluegreen-dg-${random_string.suffix.result}"
   service_role_arn      = aws_iam_role.ecs_codedeploy_role.arn
 
   deployment_style {
