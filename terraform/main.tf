@@ -113,7 +113,7 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([{
     name      = "app"
-    image     = "nginx:latest"
+    image     = var.image_url
     essential = true
     portMappings = [{
       containerPort = 80
