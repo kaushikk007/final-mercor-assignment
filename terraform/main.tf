@@ -8,7 +8,6 @@ resource "random_string" "suffix" {
   special = false
 }
 
-# ---------------- VPC & Networking ----------------
 resource "aws_vpc" "this" {
   cidr_block = "10.0.0.0/16"
 }
@@ -71,7 +70,6 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# Security group for ECS tasks (allow ALB -> ECS)
 resource "aws_security_group" "ecs_sg" {
   vpc_id = aws_vpc.this.id
 
@@ -90,7 +88,6 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-# ---------------- ALB + Target Groups ----------------
 resource "aws_lb" "this" {
   name               = "ecs-bluegreen-alb-${random_string.suffix.result}"
   load_balancer_type = "application"
@@ -137,7 +134,6 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# ---------------- ECS Cluster + Task ----------------
 resource "aws_ecs_cluster" "this" {
   name = "ecs-bluegreen-cluster-${random_string.suffix.result}"
 }
@@ -210,7 +206,6 @@ resource "aws_ecs_service" "app" {
   }
 }
 
-# ---------------- CodeDeploy Setup ----------------
 resource "aws_codedeploy_app" "ecs" {
   name             = "ecs-bluegreen-app-${random_string.suffix.result}"
   compute_platform = "ECS"
@@ -273,7 +268,6 @@ resource "aws_codedeploy_deployment_group" "ecs" {
   }
 }
 
-# ---------------- Outputs ----------------
 output "alb_dns" {
   value = aws_lb.this.dns_name
 }
